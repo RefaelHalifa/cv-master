@@ -1,0 +1,9 @@
+{
+  "name": "cv-master",
+    "version": "0.2.0",
+      "description": "A world-class CV specialist that writes, edits, and tailors CVs for tech professionals. Supports multiple users with per-user profiles, CV libraries, and automatic onboarding.",
+        "author": {
+            "name": "Refael Halifa"
+              },
+                "keywords": ["cv", "resume", "career", "jobs", "tech", "recruitment"]
+                }
