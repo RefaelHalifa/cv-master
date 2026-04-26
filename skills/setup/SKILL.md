@@ -2,95 +2,145 @@
 name: setup
 description: >
   This skill should be used when a user installs the CV Master plugin for the
-  first time and needs to set up their workspace. Triggers when the user says
-  "set up CV Master", "initialize the project", "first time setup", or when
-  no CV Master folder is found in their workspace.
-metadata:
-  version: "0.1.0"
----
+    first time and needs to set up their workspace. Triggers when the user says
+      "set up CV Master", "initialize the project", "first time setup", or when
+        no CV Master folder is found in their workspace.
+        metadata:
+          version: "0.2.0"
+          ---
 
-Run this skill the first time a user installs the CV Master plugin.
-It creates the complete folder structure on their machine and prepares everything
-for the first user onboarding.
+          Run this skill the first time a user installs the CV Master plugin.
+          It creates the folder structure on their machine and walks them through connecting it.
 
-## Step 1 — Find the Right Location
+          ## Step 0 — Detect the Environment
 
-Ask the user where they want their CV Master folder:
+          Before doing anything else, run this bash command to detect which environment the user is in:
 
-> "Where would you like me to create your CV Master folder?
-> I'd suggest your Documents folder — does that work, or would you prefer somewhere else?"
+          ```bash
+          echo "${CLAUDE_CODE:-not_set}"
+          ```
 
-Default: `~/Documents/CV Master/`
+          - If the output is `1` or any non-empty value → the user is in **Claude Code** (terminal)
+          - If the output is `not_set` or the command fails → the user is in **Cowork** (desktop app)
 
-## Step 2 — Create Folder Structure
+          Run the appropriate flow below. Do not run both.
 
-Create the full directory tree at the chosen location:
+          ---
 
-```
-CV Master/
-  users/                        ← one subfolder per user, created during onboarding
-  templates/
-    cv_design_spec.md           ← shared design standard
-  system/
-    user_registry.md            ← master index of all users
-    new_user_onboarding.md      ← intake protocol reference
-```
+          ## COWORK FLOW
 
-Use Bash to create the directories:
-```bash
-mkdir -p "<chosen_path>/CV Master/users"
-mkdir -p "<chosen_path>/CV Master/templates"
-mkdir -p "<chosen_path>/CV Master/system"
-```
+          ### Step 1 — Choose a Location
 
-## Step 3 — Write Starter Files
+          Ask the user:
 
-Write `CV Master/system/user_registry.md` with this starter content:
+          > "Where would you like me to create your CV Master folder?
+          > I'd suggest your Documents folder — does that work, or would you prefer somewhere else?"
 
-```markdown
-# User Registry
+          Default: `~/Documents/CV Master/`
 
-Master index of all users onboarded to this CV Master project.
-Update whenever a new user completes onboarding.
+          ### Step 2 — Create the Folder Structure
 
-## Registered Users
+          Create the full directory tree using Bash:
 
-(No users yet — run onboarding to add the first user.)
-```
+          ```bash
+          mkdir -p "<chosen_path>/CV Master/users"
+          mkdir -p "<chosen_path>/CV Master/templates"
+          mkdir -p "<chosen_path>/CV Master/system"
+          ```
 
-Write `CV Master/system/new_user_onboarding.md` pointing to the skill:
+          Then write the starter files (user_registry.md, new_user_onboarding.md, cv_design_spec.md) as described in `references/folder-structure.md`.
 
-```markdown
-# New User Onboarding
+          ### Step 3 — Connect the Folder to This Project
 
-Onboarding is handled automatically by the CV Master plugin.
-When a new user opens a chat, the user-onboarding skill runs the full intake flow.
+          This is the most important step. Claude cannot read or write your files until the folder is connected. Walk the user through it carefully:
 
-See the plugin's user-onboarding skill for the complete protocol.
-```
+          > "Your CV Master folder has been created at [path]. Now I need you to connect it to this project so I can read and write files there. This is a one-time step — follow these instructions carefully:"
 
-Copy `cv_design_spec.md` content from `references/cv-design-spec.md`
-(in the cv-specialist skill) into `CV Master/templates/cv_design_spec.md`.
+          **If the user is in a Project (recommended setup):**
 
-## Step 4 — Connect the Folder
+          > "1. Look at the top-left of the Claude window — you will see the name of your current project in the sidebar.
+          >
+          > 2. Click the project name to open the project settings panel.
+          >
+          > 3. In the project settings, look for a section called 'Files' or 'Connected folders' — it may show a folder icon with a + button next to it.
+          >
+          > 4. Click that + button (or 'Add folder' / 'Connect folder').
+          >
+          > 5. A Finder window will open. Navigate to [path], select the 'CV Master' folder, and click 'Open'.
+          >
+          > 6. macOS will show a permission dialog asking if Claude can access this folder. Click 'Allow' (or 'Allow Access').
+          >
+          > 7. The folder name should now appear in the project settings panel.
+          >
+          > Once you see it listed there, come back and type 'connected' — I'll verify it worked and start your onboarding."
 
-Instruct the user to connect the new folder as their project workspace:
+          **If the user is NOT in a Project (regular chat):**
 
-> "Your CV Master folder is ready at [path]. Now you need to connect it to this
-> Claude project so I can read and write files there.
->
-> Here's how:
-> 1. Click the folder icon in the top-right of this chat
-> 2. Select 'Add folder'
-> 3. Navigate to [path] and select 'CV Master'
-> 4. Click 'Allow access'
->
-> Once connected, come back and say 'ready' — I'll kick off your first onboarding session."
+          > "You're currently in a regular chat, not a project. For CV Master to work properly across sessions, I strongly recommend setting it up inside a Project.
+          >
+          > Here's how to create one:
+          > 1. In the Claude sidebar on the left, look for a 'Projects' section
+          > 2. Click '+ New Project' and name it 'CV Master'
+          > 3. Open the new project, then follow the folder connection steps above
+          >
+          > If you'd like to continue in this regular chat anyway, you can — but your files and profile won't automatically load in future sessions."
 
-## Step 5 — Confirm & Hand Off
+          ### Step 4 — Verify the Connection
 
-When the user confirms the folder is connected:
+          When the user says 'connected', verify it worked:
 
-> "Perfect — everything is in place. Let's get your profile set up."
+          ```bash
+          ls "<chosen_path>/CV Master/"
+          ```
 
-Trigger the `user-onboarding` skill immediately.
+          If the system and users folders appear, the connection is working. Confirm:
+
+          > "Connection verified — I can see your CV Master folder. Let's set up your profile now."
+
+          ### Step 5 — Hand Off to Onboarding
+
+          Trigger the `user-onboarding` skill immediately.
+
+          ---
+
+          ## CLAUDE CODE FLOW
+
+          ### Step 1 — Choose a Location
+
+          Ask the user:
+
+          > "Where would you like me to create your CV Master folder?
+          > I'd suggest your Documents folder — does that work, or would you prefer somewhere else?"
+
+          Default: `~/Documents/CV Master/`
+
+          ### Step 2 — Create the Folder Structure
+
+          Create the full directory tree:
+
+          ```bash
+          mkdir -p "<chosen_path>/CV Master/users"
+          mkdir -p "<chosen_path>/CV Master/templates"
+          mkdir -p "<chosen_path>/CV Master/system"
+          ```
+
+          Then write the starter files as described in `references/folder-structure.md`.
+
+          ### Step 3 — No Connection Needed
+
+          In Claude Code there is no folder connection step — Claude Code works directly with your filesystem. Explain this to the user:
+
+          > "In Claude Code, there's no need to 'connect' a folder like in the desktop app. I already have full access to your filesystem.
+          >
+          > For the best experience, run Claude Code from inside your CV Master folder:
+          >
+          >   cd '<chosen_path>/CV Master'
+          >   claude
+          >
+          > Or, whenever you want to work on your CV, just tell me the full path and I'll work with files there directly.
+          >
+          > That's it — you're ready to go."
+
+          ### Step 4 — Hand Off to Onboarding
+
+          Trigger the `user-onboarding` skill immediately.
